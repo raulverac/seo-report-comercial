@@ -40,6 +40,9 @@ function isAllowedUrl(urlStr) {
 const app  = express();
 const PORT = process.env.PORT || 3000;
 
+// Confiar en el proxy de Railway/cloud para que req.protocol sea https
+app.set('trust proxy', 1);
+
 // ─── Security middleware ───────────────────────────────────────────────────────
 app.use(helmet({ contentSecurityPolicy: false }));
 
@@ -62,7 +65,7 @@ app.use(session({
   secret: process.env.SESSION_SECRET || 'mw-seo-dev-secret-change-me',
   resave: false,
   saveUninitialized: false,
-  cookie: { httpOnly: true, secure: false, maxAge: 8 * 60 * 60 * 1000 },
+  cookie: { httpOnly: true, secure: process.env.NODE_ENV === 'production', sameSite: 'lax', maxAge: 8 * 60 * 60 * 1000 },
 }));
 
 function requireAuth(req, res, next) {
