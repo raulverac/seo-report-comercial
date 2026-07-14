@@ -1,0 +1,30 @@
+# Dependencias
+node_modules/
+
+# Variables de entorno (contienen claves y contraseñas)
+.env
+.env.local
+.env.*.local
+
+# PDFs generados
+output/
+pdf/
+*.pdf
+
+# Logs
+*.log
+npm-debug.log*
+
+# macOS
+.DS_Store
+.AppleDouble
+.LSOverride
+
+# Editores
+.vscode/
+.idea/
+*.swp
+*.swo
+
+# Carpeta CLI original (vacía)
+seo-report-generator/

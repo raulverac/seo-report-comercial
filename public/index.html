@@ -1,0 +1,865 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>SEO Report — Mentalidad Web</title>
+  <link rel="stylesheet"
+        href="https://cdn.jsdelivr.net/npm/quill@1.3.7/dist/quill.snow.css"
+        integrity="sha384-cPa8kzsYWhqpAfWOLWYIw3V0BhPi/m3lrd8tBTPxr2NrYCHRVZ7xy1cEoRGOM/03"
+        crossorigin="anonymous" />
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+    :root {
+      --brand: #e63b2e; --brand-dark: #c03024;
+      --dark: #111111; --surface: #1a1a1a; --surface2: #242424;
+      --border: #2e2e2e; --text: #f0f0f0; --muted: #888; --radius: 10px;
+      --green: #1A6B3A; --green-bg: #0d1a11;
+    }
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+      background: var(--dark); color: var(--text);
+      min-height: 100vh; display: flex; flex-direction: column;
+      align-items: center; padding: 32px 24px;
+    }
+    .card {
+      background: var(--surface); border: 1px solid var(--border);
+      border-radius: 16px; padding: 40px 44px;
+      width: 100%; max-width: 680px;
+      box-shadow: 0 24px 64px rgba(0,0,0,0.5);
+    }
+    .badge {
+      display: inline-block; background: rgba(230,59,46,0.15); color: var(--brand);
+      font-size: 11px; font-weight: 700; letter-spacing: 2px; text-transform: uppercase;
+      padding: 5px 12px; border-radius: 999px;
+      border: 1px solid rgba(230,59,46,0.3); margin-bottom: 18px;
+    }
+    h1 { font-size: 32px; font-weight: 800; letter-spacing: -1px; line-height: 1.1; margin-bottom: 6px; }
+    h1 span { color: var(--brand); }
+    .subtitle { color: var(--muted); font-size: 13px; line-height: 1.6; margin-bottom: 28px; }
+    .section-label { font-size: 11px; font-weight: 600; letter-spacing: 0.5px; text-transform: uppercase; color: var(--muted); margin-bottom: 10px; }
+    #leads-loading { display: flex; align-items: center; gap: 10px; color: var(--muted); font-size: 13px; padding: 16px 0; }
+    #leads-error { background: rgba(230,59,46,0.1); border: 1px solid rgba(230,59,46,0.3); border-radius: var(--radius); padding: 12px 16px; color: #ff7b72; font-size: 13px; display: none; }
+    .leads-list { display: flex; flex-direction: column; gap: 8px; margin-bottom: 20px; }
+    .lead-card {
+      background: var(--surface2); border: 1px solid var(--border);
+      border-radius: var(--radius); padding: 14px 16px; cursor: pointer;
+      transition: border-color 0.15s, background 0.15s;
+      display: grid; grid-template-columns: 1fr auto; gap: 6px; align-items: center;
+    }
+    .lead-card:hover { border-color: #444; background: #2a2a2a; }
+    .lead-card.selected { border-color: var(--brand); background: rgba(230,59,46,0.07); }
+    .lead-domain { font-size: 14px; font-weight: 700; color: var(--text); margin-bottom: 2px; }
+    .lead-client { font-size: 12px; color: var(--muted); }
+    .lead-badges { display: flex; gap: 6px; align-items: center; flex-wrap: wrap; justify-content: flex-end; }
+    .status-pill { font-size: 10px; font-weight: 600; padding: 3px 8px; border-radius: 999px; white-space: nowrap; }
+    .s-Unprocessed  { background: rgba(136,136,136,0.2); color: #aaa; }
+    .s-Email_sent   { background: rgba(41,128,185,0.2);  color: #5dade2; }
+    .s-Negotiations { background: rgba(214,136,16,0.2);  color: #f0a500; }
+    .s-Converted    { background: rgba(46,160,67,0.2);   color: #4caf50; }
+    .score-pill { font-size: 10px; font-weight: 600; padding: 3px 7px; border-radius: 5px; background: var(--surface); border: 1px solid var(--border); color: var(--muted); }
+    .score-pill span { color: var(--text); }
+    #lead-preview { background: var(--surface2); border: 1px solid var(--border); border-radius: var(--radius); padding: 16px 18px; margin-bottom: 20px; display: none; }
+    #lead-preview.visible { display: block; }
+    .preview-title { font-size: 11px; font-weight: 700; color: var(--muted); text-transform: uppercase; letter-spacing: 0.5px; margin-bottom: 12px; }
+    .preview-grid { display: grid; grid-template-columns: 1fr 1fr 1fr 1fr; gap: 8px; margin-bottom: 12px; }
+    .preview-metric { background: var(--surface); border: 1px solid var(--border); border-radius: 8px; padding: 10px; text-align: center; }
+    .preview-metric .val { font-size: 20px; font-weight: 800; color: var(--brand); }
+    .preview-metric .lbl { font-size: 9px; color: var(--muted); margin-top: 2px; }
+    .preview-keywords { display: flex; flex-wrap: wrap; gap: 6px; margin-bottom: 10px; }
+    .kw-tag { background: var(--surface); border: 1px solid var(--border); border-radius: 6px; padding: 3px 9px; font-size: 11px; color: var(--text); }
+    .preview-row { font-size: 12px; color: var(--muted); margin-bottom: 4px; }
+    .preview-row span { color: var(--text); }
+
+    /* ── Botones acción ── */
+    .btn-row { display: flex; gap: 10px; }
+    button#btn-generate {
+      flex: 1; background: var(--brand); color: #fff; border: none;
+      border-radius: var(--radius); padding: 15px; font-size: 15px; font-weight: 700;
+      cursor: pointer; display: flex; align-items: center; justify-content: center; gap: 8px;
+      transition: background 0.2s, transform 0.1s;
+    }
+    button#btn-generate:hover:not(:disabled) { background: var(--brand-dark); }
+    button#btn-generate:active:not(:disabled) { transform: scale(0.99); }
+    button#btn-generate:disabled { opacity: 0.5; cursor: not-allowed; }
+    button#btn-edit {
+      background: var(--surface2); color: var(--text); border: 1px solid var(--border);
+      border-radius: var(--radius); padding: 15px 20px; font-size: 15px; font-weight: 700;
+      cursor: pointer; display: flex; align-items: center; justify-content: center; gap: 8px;
+      transition: border-color 0.2s, background 0.2s;
+      white-space: nowrap;
+    }
+    button#btn-edit:hover:not(:disabled) { border-color: #555; background: #2e2e2e; }
+    button#btn-edit:disabled { opacity: 0.5; cursor: not-allowed; }
+
+    .status { margin-top: 20px; display: none; }
+    .status.visible { display: block; }
+    .status-bar { background: var(--surface2); border: 1px solid var(--border); border-radius: var(--radius); padding: 16px 18px; }
+    .status-header { display: flex; align-items: center; gap: 10px; font-size: 13px; font-weight: 600; margin-bottom: 10px; }
+    .spinner { width: 16px; height: 16px; border: 2px solid var(--border); border-top-color: var(--brand); border-radius: 50%; animation: spin 0.7s linear infinite; flex-shrink: 0; }
+    @keyframes spin { to { transform: rotate(360deg); } }
+    .progress-track { background: var(--border); border-radius: 999px; height: 4px; overflow: hidden; }
+    .progress-fill  { background: var(--brand); height: 100%; border-radius: 999px; transition: width 0.4s ease; width: 0%; }
+    .status-step    { font-size: 12px; color: var(--muted); margin-top: 8px; min-height: 18px; }
+    .status-error   { background: rgba(230,59,46,0.1); border: 1px solid rgba(230,59,46,0.3); border-radius: var(--radius); padding: 14px 16px; font-size: 13px; color: #ff7b72; display: flex; align-items: flex-start; gap: 10px; }
+    .status-success { background: rgba(46,160,67,0.1); border: 1px solid rgba(46,160,67,0.3); border-radius: var(--radius); padding: 14px 16px; font-size: 13px; color: #56d364; display: flex; align-items: center; gap: 10px; font-weight: 600; }
+
+    .divider { border: none; border-top: 1px solid var(--border); margin: 28px 0; }
+    .features { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
+    .feature  { display: flex; align-items: center; gap: 8px; font-size: 12px; color: var(--muted); }
+    .feature-dot { width: 6px; height: 6px; border-radius: 50%; background: var(--brand); flex-shrink: 0; }
+    .footer { margin-top: 24px; text-align: center; font-size: 12px; color: var(--muted); }
+    .footer a { color: var(--brand); text-decoration: none; }
+
+    /* ══════════════════════════════════════════════════════
+       EDITOR OVERLAY
+    ══════════════════════════════════════════════════════ */
+    #editor-overlay {
+      display: none; position: fixed; inset: 0; z-index: 1000;
+      background: #0e0e0e; flex-direction: row;
+    }
+    #editor-overlay.visible { display: flex; }
+
+    /* Sidebar */
+    #ed-sidebar {
+      width: 260px; min-width: 260px; background: #141414;
+      border-right: 1px solid #2a2a2a;
+      display: flex; flex-direction: column; padding: 0;
+      overflow-y: auto;
+    }
+    .ed-sidebar-top {
+      padding: 18px 18px 14px;
+      border-bottom: 1px solid #2a2a2a;
+      display: flex; align-items: center; gap: 10px;
+    }
+    .ed-logo { font-size: 13px; font-weight: 800; color: var(--text); flex: 1; }
+    .ed-logo span { color: var(--brand); }
+    #ed-close {
+      background: none; border: none; color: var(--muted); cursor: pointer;
+      font-size: 20px; line-height: 1; padding: 2px 4px;
+      transition: color 0.15s;
+    }
+    #ed-close:hover { color: var(--text); }
+
+    /* Domain badge in sidebar */
+    #ed-domain-badge {
+      margin: 12px 18px 0; padding: 8px 12px; background: var(--green-bg);
+      border: 1px solid #1a4a2a; border-radius: 8px;
+      font-size: 11px; color: #4caf50; font-weight: 600; display: none;
+    }
+
+    /* Tabs */
+    .ed-tabs { display: flex; gap: 0; padding: 14px 18px 0; }
+    .ed-tab {
+      flex: 1; padding: 8px 4px; font-size: 11px; font-weight: 700;
+      background: none; border: none; border-bottom: 2px solid transparent;
+      color: var(--muted); cursor: pointer; text-align: center;
+      transition: color 0.15s, border-color 0.15s; text-transform: uppercase; letter-spacing: 0.5px;
+    }
+    .ed-tab.active { color: var(--text); border-bottom-color: var(--brand); }
+
+    /* Sections */
+    .ed-section-header {
+      padding: 16px 18px 8px; font-size: 10px; font-weight: 700;
+      text-transform: uppercase; letter-spacing: 1px; color: var(--muted);
+    }
+    .ed-section-list { padding: 0 18px 12px; display: flex; flex-direction: column; gap: 6px; }
+    .ed-section-item {
+      display: flex; align-items: center; gap: 10px;
+      padding: 8px 10px; border-radius: 8px; cursor: pointer;
+      background: #1e1e1e; border: 1px solid #2a2a2a;
+      transition: border-color 0.15s; user-select: none;
+    }
+    .ed-section-item:hover { border-color: #3a3a3a; }
+    .ed-section-item input[type="checkbox"] { accent-color: var(--green); width: 14px; height: 14px; cursor: pointer; }
+    .ed-section-label { font-size: 11px; color: var(--text); }
+    .ed-section-num { font-size: 10px; color: var(--muted); margin-left: auto; }
+
+    /* Sidebar generate btn */
+    #ed-sidebar-footer { padding: 14px 18px 18px; margin-top: auto; border-top: 1px solid #2a2a2a; }
+    #btn-ed-generate {
+      width: 100%; background: var(--green); color: #fff; border: none;
+      border-radius: 8px; padding: 13px; font-size: 14px; font-weight: 700;
+      cursor: pointer; display: flex; align-items: center; justify-content: center; gap: 8px;
+      transition: background 0.2s; margin-bottom: 8px;
+    }
+    #btn-ed-generate:hover:not(:disabled) { background: #14572f; }
+    #btn-ed-generate:disabled { opacity: 0.5; cursor: not-allowed; }
+    #ed-gen-status { font-size: 11px; color: var(--muted); text-align: center; min-height: 16px; }
+
+    /* Main editor area */
+    #ed-main {
+      flex: 1; display: flex; flex-direction: column; overflow: hidden;
+    }
+    .ed-main-header {
+      padding: 16px 24px; border-bottom: 1px solid #2a2a2a;
+      display: flex; align-items: center; gap: 12px;
+    }
+    .ed-main-title { font-size: 14px; font-weight: 700; }
+    .ed-main-hint  { font-size: 12px; color: var(--muted); margin-left: auto; }
+
+    /* Quill container */
+    .ed-panel { display: none; flex: 1; flex-direction: column; overflow: hidden; }
+    .ed-panel.active { display: flex; }
+
+    /* Override Quill snow theme for dark mode */
+    .ql-toolbar.ql-snow {
+      background: #1a1a1a; border: none !important;
+      border-bottom: 1px solid #2a2a2a !important;
+      padding: 8px 12px;
+    }
+    .ql-container.ql-snow {
+      border: none !important; flex: 1; overflow-y: auto;
+      font-family: inherit; font-size: 14px;
+      background: #111; color: #eee;
+    }
+    .ql-editor { min-height: 100%; padding: 24px 32px; color: #eee; line-height: 1.7; }
+    .ql-editor.ql-blank::before { color: #444; font-style: normal; }
+    .ql-snow .ql-stroke { stroke: #888 !important; }
+    .ql-snow .ql-fill  { fill: #888 !important; }
+    .ql-snow .ql-picker-label { color: #888 !important; }
+    .ql-snow .ql-picker-options { background: #1e1e1e !important; border-color: #333 !important; }
+    .ql-snow .ql-picker-item { color: #ccc !important; }
+    .ql-toolbar .ql-active .ql-stroke,
+    .ql-toolbar button:hover .ql-stroke { stroke: #fff !important; }
+    .ql-toolbar .ql-active .ql-fill,
+    .ql-toolbar button:hover .ql-fill   { fill: #fff !important; }
+    .ql-toolbar .ql-active .ql-picker-label,
+    .ql-toolbar .ql-picker-label:hover  { color: #fff !important; }
+    .ql-editor h1, .ql-editor h2, .ql-editor h3 { color: #fff; margin: 16px 0 8px; }
+    .ql-editor strong { color: #fff; }
+    .ql-editor a { color: #4caf50; }
+    .ql-editor blockquote {
+      border-left: 3px solid #1A6B3A; padding-left: 14px;
+      color: #aaa; margin: 12px 0;
+    }
+    .ql-editor pre.ql-syntax { background: #1e1e1e; color: #aaa; border-radius: 6px; padding: 12px; }
+    .ql-editor ul > li::before { color: #1A6B3A !important; }
+
+    /* Loading overlay inside editor */
+    #ed-loading {
+      display: none; position: absolute; inset: 0; z-index: 10;
+      background: rgba(14,14,14,0.92); flex-direction: column;
+      align-items: center; justify-content: center; gap: 16px;
+    }
+    #ed-loading.visible { display: flex; }
+    #ed-loading .spinner { width: 32px; height: 32px; border-width: 3px; }
+    #ed-loading p { font-size: 14px; color: var(--muted); }
+  </style>
+</head>
+<body>
+
+<!-- ── USER BAR ────────────────────────────────────────────────────────────── -->
+<div id="user-bar" style="
+  position:fixed; top:0; left:0; right:0; z-index:1000;
+  background:#1a1a1a; border-bottom:1px solid #2e2e2e;
+  display:flex; align-items:center; justify-content:flex-end;
+  padding:8px 20px; gap:12px;
+">
+  <span id="user-email" style="font-size:13px; color:#888;"></span>
+  <button id="btn-logout" style="
+    font-size:12px; font-weight:600; color:#888;
+    background:#242424; border:1px solid #2e2e2e;
+    border-radius:6px; padding:5px 12px;
+    cursor:pointer; font-family:inherit; letter-spacing:0.2px;
+    transition:color 0.15s, border-color 0.15s;
+  " onmouseover="this.style.color='#f0f0f0';this.style.borderColor='#444'"
+     onmouseout="this.style.color='#888';this.style.borderColor='#2e2e2e'">
+    Cerrar sesión
+  </button>
+</div>
+
+<!-- ── CARD PRINCIPAL ──────────────────────────────────────────────────────── -->
+<div class="card" style="margin-top:44px;">
+  <div class="badge">Mentalidad Web</div>
+  <h1>SEO<br><span>REPORT</span></h1>
+  <p class="subtitle">Selecciona un prospecto de WebCEO para generar su reporte PDF completo.</p>
+
+  <div class="section-label">Prospectos SEO — WebCEO</div>
+
+  <div id="leads-loading"><div class="spinner"></div> Cargando prospectos…</div>
+  <div id="leads-error"></div>
+  <div class="leads-list" id="leads-list"></div>
+
+  <div id="lead-preview">
+    <div class="preview-title">Detalle del prospecto</div>
+    <div class="preview-grid" id="preview-metrics"></div>
+    <div class="preview-keywords" id="preview-keywords"></div>
+    <div id="preview-details"></div>
+  </div>
+
+  <div class="btn-row">
+    <button id="btn-generate" disabled>
+      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
+        <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/>
+        <polyline points="14 2 14 8 20 8"/><line x1="12" y1="18" x2="12" y2="12"/>
+        <polyline points="9 15 12 18 15 15"/>
+      </svg>
+      Descargar PDF
+    </button>
+    <button id="btn-edit" disabled>
+      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
+        <path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/>
+        <path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/>
+      </svg>
+      Editar
+    </button>
+  </div>
+
+  <div class="status" id="status"></div>
+  <hr class="divider" />
+
+  <div class="features">
+    <div class="feature"><div class="feature-dot"></div>Rankings de keywords</div>
+    <div class="feature"><div class="feature-dot"></div>Historial de posición</div>
+    <div class="feature"><div class="feature-dot"></div>Competidores orgánicos</div>
+    <div class="feature"><div class="feature-dot"></div>Análisis de backlinks</div>
+    <div class="feature"><div class="feature-dot"></div>Screenshot del sitio</div>
+    <div class="feature"><div class="feature-dot"></div>Análisis IA (Gemini)</div>
+  </div>
+</div>
+
+<div class="footer">Powered by <a href="https://www.mentalidadweb.com" target="_blank">Mentalidad Web</a> × WebCEO</div>
+
+<!-- ══════════════════════════════════════════════════════════════════════════
+     EDITOR OVERLAY
+══════════════════════════════════════════════════════════════════════════ -->
+<div id="editor-overlay">
+
+  <!-- Sidebar -->
+  <div id="ed-sidebar">
+    <div class="ed-sidebar-top">
+      <div class="ed-logo">SEO <span>EDITOR</span></div>
+      <button id="ed-close" title="Cerrar editor">✕</button>
+    </div>
+
+    <div id="ed-domain-badge"></div>
+
+    <!-- Tabs: Carta / Análisis IA / Informe Final -->
+    <div class="ed-tabs">
+      <button class="ed-tab active" data-panel="carta">Inf. Inicial</button>
+      <button class="ed-tab" data-panel="ai">Análisis IA</button>
+      <button class="ed-tab" data-panel="final">Inf. Final</button>
+    </div>
+
+    <!-- Secciones a incluir -->
+    <div class="ed-section-header">Secciones del PDF</div>
+    <div class="ed-section-list">
+      <label class="ed-section-item">
+        <input type="checkbox" name="sec" value="incidencias" checked>
+        <span class="ed-section-label">Incidencias SEO</span>
+        <span class="ed-section-num">Pág 2</span>
+      </label>
+      <label class="ed-section-item">
+        <input type="checkbox" name="sec" value="problemas" checked>
+        <span class="ed-section-label">Problemas usabilidad</span>
+        <span class="ed-section-num">Pág 3</span>
+      </label>
+      <label class="ed-section-item">
+        <input type="checkbox" name="sec" value="factores" checked>
+        <span class="ed-section-label">Factores Google</span>
+        <span class="ed-section-num">Pág 4</span>
+      </label>
+      <label class="ed-section-item">
+        <input type="checkbox" name="sec" value="posicionamiento" checked>
+        <span class="ed-section-label">Posicionamiento / Tóxicos</span>
+        <span class="ed-section-num">Pág 5</span>
+      </label>
+      <label class="ed-section-item">
+        <input type="checkbox" name="sec" value="ai" checked>
+        <span class="ed-section-label">Análisis IA</span>
+        <span class="ed-section-num">Pág 6</span>
+      </label>
+    </div>
+
+    <div id="ed-sidebar-footer">
+      <button id="btn-ed-generate" disabled>
+        <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
+          <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/>
+          <polyline points="14 2 14 8 20 8"/>
+          <line x1="12" y1="18" x2="12" y2="12"/><polyline points="9 15 12 18 15 15"/>
+        </svg>
+        Generar PDF
+      </button>
+      <div id="ed-gen-status"></div>
+    </div>
+  </div>
+
+  <!-- Main editor content -->
+  <div id="ed-main" style="position:relative;">
+
+    <!-- Loading state while prefetching -->
+    <div id="ed-loading">
+      <div class="spinner"></div>
+      <p id="ed-loading-text">Cargando datos del prospecto…</p>
+    </div>
+
+    <!-- Panel: Informe Inicial -->
+    <div class="ed-panel active" id="panel-carta">
+      <div class="ed-main-header">
+        <span class="ed-main-title">Informe Inicial</span>
+        <span class="ed-main-hint">Se insertará como página extra al inicio del reporte · Puedes añadir imágenes con el botón 🖼</span>
+      </div>
+      <div id="quill-carta"></div>
+    </div>
+
+    <!-- Panel: Análisis IA -->
+    <div class="ed-panel" id="panel-ai">
+      <div class="ed-main-header">
+        <span class="ed-main-title">Análisis IA — Gemini</span>
+        <span class="ed-main-hint">Edita el texto generado por IA antes de incluirlo en el PDF</span>
+      </div>
+      <div id="quill-ai"></div>
+    </div>
+
+    <!-- Panel: Informe Final -->
+    <div class="ed-panel" id="panel-final">
+      <div class="ed-main-header">
+        <span class="ed-main-title">Informe Final</span>
+        <span class="ed-main-hint">Se insertará como página extra al final del reporte · Puedes añadir imágenes con el botón 🖼</span>
+      </div>
+      <div id="quill-final"></div>
+    </div>
+  </div>
+</div>
+
+<!-- Quill JS -->
+<script src="https://cdn.jsdelivr.net/npm/quill@1.3.7/dist/quill.min.js"
+        integrity="sha384-QUJ+ckWz1M+a7w0UfG1sEn4pPrbQwSxGm/1TIPyioqXBrwuT9l4f9gdHWLDLbVWI"
+        crossorigin="anonymous"></script>
+<script>
+// ─── Quill toolbar config ──────────────────────────────────────────────────
+const TOOLBAR = [
+  [{ 'font': [] }, { 'size': ['small', false, 'large', 'huge'] }],
+  ['bold', 'italic', 'underline', 'strike'],
+  [{ 'color': [] }, { 'background': [] }],
+  [{ 'header': [1, 2, 3, 4, false] }],
+  [{ 'list': 'ordered' }, { 'list': 'bullet' }, { 'indent': '-1' }, { 'indent': '+1' }],
+  [{ 'align': [] }],
+  ['blockquote', 'code-block'],
+  ['link'],
+  ['clean'],
+];
+
+// Toolbar con botón de imagen — para Inf. Inicial e Inf. Final
+const TOOLBAR_IMAGE = [
+  [{ 'font': [] }, { 'size': ['small', false, 'large', 'huge'] }],
+  ['bold', 'italic', 'underline', 'strike'],
+  [{ 'color': [] }, { 'background': [] }],
+  [{ 'header': [1, 2, 3, 4, false] }],
+  [{ 'list': 'ordered' }, { 'list': 'bullet' }, { 'indent': '-1' }, { 'indent': '+1' }],
+  [{ 'align': [] }],
+  ['blockquote', 'code-block'],
+  ['link', 'image'],
+  ['clean'],
+];
+
+const quillCarta = new Quill('#quill-carta', {
+  theme: 'snow',
+  placeholder: 'Escribe aquí el informe inicial para el prospecto… Puedes insertar imágenes con el botón de imagen de la barra de herramientas.',
+  modules: { toolbar: { container: TOOLBAR_IMAGE } },
+});
+
+const quillAI = new Quill('#quill-ai', {
+  theme: 'snow',
+  placeholder: 'Cargando análisis de IA…',
+  modules: { toolbar: TOOLBAR },
+});
+
+// Handler de imagen reutilizable (mismo para Inf. Inicial e Inf. Final)
+function makeImageHandler(quillInstance) {
+  return function () {
+    const input = document.createElement('input');
+    input.setAttribute('type', 'file');
+    input.setAttribute('accept', 'image/png, image/jpeg, image/gif, image/webp');
+    input.style.display = 'none';
+    document.body.appendChild(input);
+    input.click();
+    input.addEventListener('change', () => {
+      const file = input.files[0];
+      if (!file) return;
+      if (file.size > 5 * 1024 * 1024) {
+        alert('La imagen es demasiado grande (máx. 5MB). Usa una imagen más pequeña.');
+        document.body.removeChild(input);
+        return;
+      }
+      const reader = new FileReader();
+      reader.onload = (e) => {
+        const range = quillInstance.getSelection(true);
+        quillInstance.insertEmbed(range ? range.index : 0, 'image', e.target.result);
+        quillInstance.setSelection((range ? range.index : 0) + 1);
+      };
+      reader.readAsDataURL(file);
+      document.body.removeChild(input);
+    });
+  };
+}
+
+const quillFinal = new Quill('#quill-final', {
+  theme: 'snow',
+  placeholder: 'Escribe aquí el informe final para el prospecto… Se añadirá como última página del PDF.',
+  modules: { toolbar: { container: TOOLBAR_IMAGE } },
+});
+quillFinal.getModule('toolbar').addHandler('image', makeImageHandler(quillFinal));
+quillCarta.getModule('toolbar').addHandler('image', makeImageHandler(quillCarta));
+
+// ─── Estado global ─────────────────────────────────────────────────────────
+const STATUS_CLASS = {
+  'Unprocessed':'s-Unprocessed', 'Email sent':'s-Email_sent',
+  'Negotiations':'s-Negotiations', 'Converted':'s-Converted',
+};
+let selectedLeadId = null;
+let currentSessionKey = null;
+
+const btn       = document.getElementById('btn-generate');
+const btnEdit   = document.getElementById('btn-edit');
+const statusEl  = document.getElementById('status');
+const loadingEl = document.getElementById('leads-loading');
+const errorEl   = document.getElementById('leads-error');
+const listEl    = document.getElementById('leads-list');
+const previewEl = document.getElementById('lead-preview');
+const overlay   = document.getElementById('editor-overlay');
+const edLoading = document.getElementById('ed-loading');
+const edLoadTxt = document.getElementById('ed-loading-text');
+const btnEdGen  = document.getElementById('btn-ed-generate');
+const edGenSt   = document.getElementById('ed-gen-status');
+const edDomBadge= document.getElementById('ed-domain-badge');
+
+const STEPS = [
+  'Obteniendo datos del prospecto…',
+  'Obteniendo rankings…',
+  'Obteniendo competidores…',
+  'Obteniendo backlinks…',
+  'Capturando screenshot…',
+  'Generando PDF…',
+];
+
+// ─── Cargar prospectos ─────────────────────────────────────────────────────
+async function loadLeads() {
+  try {
+    const res = await authFetch('/api/leads');
+    const data = await res.json();
+    loadingEl.style.display = 'none';
+    if (!res.ok) {
+      errorEl.innerHTML = `<strong>Error WebCEO:</strong> ${data.error || 'Error ' + res.status}`;
+      errorEl.style.display = 'block';
+      return;
+    }
+    if (!Array.isArray(data) || !data.length) {
+      errorEl.textContent = 'No se encontraron prospectos en WebCEO.';
+      errorEl.style.display = 'block';
+      return;
+    }
+    renderLeads(data);
+  } catch (err) {
+    loadingEl.style.display = 'none';
+    errorEl.textContent = 'No se pudo conectar con el servidor: ' + err.message;
+    errorEl.style.display = 'block';
+  }
+}
+
+function renderLeads(leads) {
+  listEl.innerHTML = '';
+  leads.forEach(lead => {
+    const card = document.createElement('div');
+    card.className = 'lead-card';
+    card.dataset.id = lead.lead;
+    const sc = STATUS_CLASS[lead.status] || 's-Unprocessed';
+    card.innerHTML = `
+      <div>
+        <div class="lead-domain">${lead.domain}</div>
+        <div class="lead-client">${lead.client_name || 'Sin nombre de contacto'}</div>
+      </div>
+      <div class="lead-badges">
+        <span class="score-pill">⚡<span>${lead.site_performance ?? '—'}</span></span>
+        <span class="score-pill">DA <span>${lead.moz_domain_authority ?? '—'}</span></span>
+        <span class="status-pill ${sc}">${lead.status || 'Unprocessed'}</span>
+      </div>`;
+    card.addEventListener('click', () => selectLead(lead, card));
+    listEl.appendChild(card);
+  });
+}
+
+function selectLead(lead, cardEl) {
+  document.querySelectorAll('.lead-card').forEach(c => c.classList.remove('selected'));
+  cardEl.classList.add('selected');
+  selectedLeadId = lead.lead;
+  currentSessionKey = null; // reset cache on new selection
+  btn.disabled = false;
+  btnEdit.disabled = false;
+  showPreview(lead);
+  statusEl.className = 'status';
+}
+
+function showPreview(lead) {
+  previewEl.classList.add('visible');
+  document.getElementById('preview-metrics').innerHTML = `
+    <div class="preview-metric"><div class="val">${lead.site_performance ?? '—'}</div><div class="lbl">Performance /100</div></div>
+    <div class="preview-metric"><div class="val">${lead.moz_domain_authority ?? '—'}</div><div class="lbl">Moz DA</div></div>
+    <div class="preview-metric"><div class="val">${(lead.organic_visits||0).toLocaleString()}</div><div class="lbl">Visitas org.</div></div>
+    <div class="preview-metric"><div class="val">${(lead.search_engines||[]).length}</div><div class="lbl">Buscadores</div></div>`;
+  document.getElementById('preview-keywords').innerHTML =
+    (lead.keywords||[]).map(k=>`<span class="kw-tag">${k}</span>`).join('') ||
+    '<span style="color:var(--muted);font-size:12px">Sin keywords</span>';
+  const rows = [];
+  if (lead.client_email)    rows.push(`<div class="preview-row">Email: <span>${lead.client_email}</span></div>`);
+  if (lead.target_location) rows.push(`<div class="preview-row">Ubicación: <span>${lead.target_location}</span></div>`);
+  if (lead.target_language) rows.push(`<div class="preview-row">Idioma: <span>${lead.target_language}</span></div>`);
+  if (lead.client_notes)    rows.push(`<div class="preview-row">Notas: <span>${lead.client_notes}</span></div>`);
+  const ses = (lead.search_engines||[]).map(s=>s.replace('_',' ')).join(', ');
+  if (ses) rows.push(`<div class="preview-row">Buscadores: <span>${ses}</span></div>`);
+  document.getElementById('preview-details').innerHTML = rows.join('');
+}
+
+// ─── Status UI helpers ─────────────────────────────────────────────────────
+function showLoading(t) {
+  statusEl.className = 'status visible';
+  statusEl.innerHTML = `<div class="status-bar"><div class="status-header"><div class="spinner"></div><span>Generando reporte…</span></div><div class="progress-track"><div class="progress-fill" id="prog"></div></div><div class="status-step" id="step-text">${t}</div></div>`;
+}
+function setProgress(pct, t) {
+  const p = document.getElementById('prog');
+  const s = document.getElementById('step-text');
+  if (p) p.style.width = pct + '%';
+  if (s) s.textContent = t;
+}
+function showError(msg) {
+  statusEl.className = 'status visible';
+  statusEl.innerHTML = `<div class="status-error"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="flex-shrink:0"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>${msg}</div>`;
+}
+function showSuccess() {
+  statusEl.className = 'status visible';
+  statusEl.innerHTML = `<div class="status-success"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="20 6 9 17 4 12"/></svg>¡PDF descargado exitosamente!</div>`;
+}
+
+// ─── Descargar PDF (flujo directo) ─────────────────────────────────────────
+async function generate() {
+  if (!selectedLeadId) return;
+  btn.disabled = true;
+  showLoading(STEPS[0]);
+  let stepIdx = 0;
+  const interval = setInterval(() => {
+    stepIdx = Math.min(stepIdx + 1, STEPS.length - 1);
+    setProgress(Math.round((stepIdx / (STEPS.length - 1)) * 85), STEPS[stepIdx]);
+  }, 5000);
+  try {
+    const res = await authFetch('/api/generate-raw', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ leadId: selectedLeadId }),
+    });
+    clearInterval(interval);
+    if (!res) return;
+    if (!res.ok) { const d = await res.json().catch(()=>({})); showError(d.error || `Error ${res.status}`); return; }
+    setProgress(100, 'PDF listo. Iniciando descarga…');
+    await downloadBlob(res, `seo-report-${selectedLeadId}`);
+    showSuccess();
+  } catch (err) {
+    clearInterval(interval);
+    showError('No se pudo conectar con el servidor.');
+  } finally { btn.disabled = false; }
+}
+
+async function downloadBlob(res, filename) {
+  const blob = await res.blob();
+  const a = document.createElement('a');
+  a.href = URL.createObjectURL(blob);
+  a.download = `${filename}-${new Date().toISOString().split('T')[0]}.pdf`;
+  a.click();
+  URL.revokeObjectURL(a.href);
+}
+
+// ─── Convertir Quill HTML → markdown-like para el servidor ────────────────
+// Las imágenes se codifican como [IMG:data:image/...;base64,...] para que
+// el renderer de PDF las pueda detectar y dibujar como imágenes reales.
+function quillToMarkdown(quill) {
+  const html = quill.root.innerHTML;
+  if (!html || html === '<p><br></p>' || quill.getText().trim() === '') return '';
+
+  // 1. Extraer imágenes ANTES de cualquier otra transformación
+  //    Quill las inserta como <img src="data:..."> dentro de <p>
+  let processed = html
+    .replace(/<img[^>]+src="(data:[^"]+)"[^>]*\/?>/gi, '\n[IMG:$1]\n')
+    .replace(/<img[^>]+src="([^"]+)"[^>]*\/?>/gi, ''); // ignorar imágenes externas (URL)
+
+  // 2. Convertir estructura HTML → markdown
+  return processed
+    .replace(/<h1[^>]*>(.*?)<\/h1>/gi,   '# $1\n')
+    .replace(/<h2[^>]*>(.*?)<\/h2>/gi,   '## $1\n')
+    .replace(/<h3[^>]*>(.*?)<\/h3>/gi,   '### $1\n')
+    .replace(/<h4[^>]*>(.*?)<\/h4>/gi,   '#### $1\n')
+    .replace(/<li[^>]*>(.*?)<\/li>/gi,   '- $1\n')
+    .replace(/<p[^>]*>(.*?)<\/p>/gi,     '$1\n')
+    .replace(/<br\s*\/?>/gi,             '\n')
+    .replace(/<strong[^>]*>(.*?)<\/strong>/gi, '**$1**')
+    .replace(/<em[^>]*>(.*?)<\/em>/gi,   '$1')
+    .replace(/<u[^>]*>(.*?)<\/u>/gi,     '$1')
+    .replace(/<s[^>]*>(.*?)<\/s>/gi,     '$1')
+    .replace(/<blockquote[^>]*>(.*?)<\/blockquote>/gi, '> $1\n')
+    .replace(/<pre[^>]*>(.*?)<\/pre>/gi, '$1\n')
+    .replace(/<[^>]+>/g, '')
+    .replace(/&nbsp;/g, ' ')
+    .replace(/&amp;/g, '&')
+    .replace(/&lt;/g, '<')
+    .replace(/&gt;/g, '>')
+    .replace(/&quot;/g, '"')
+    .replace(/&#39;/g, "'")
+    .replace(/\n{3,}/g, '\n\n')
+    .trim();
+}
+
+// ─── Editor: abrir y pre-cargar datos ─────────────────────────────────────
+async function openEditor() {
+  if (!selectedLeadId) return;
+  btnEdit.disabled = true;
+  overlay.classList.add('visible');
+  document.body.style.overflow = 'hidden';
+
+  edLoading.classList.add('visible');
+  edLoadTxt.textContent = 'Cargando datos del prospecto y análisis IA…';
+  btnEdGen.disabled = true;
+  edGenSt.textContent = '';
+
+  try {
+    // Si ya tenemos sessionKey activa, no volvemos a llamar prefetch
+    if (!currentSessionKey) {
+      const res = await authFetch('/api/prefetch-report', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ leadId: selectedLeadId }),
+      });
+      if (!res) return;
+      if (!res.ok) {
+        const d = await res.json().catch(() => ({}));
+        throw new Error(d.error || `Error ${res.status}`);
+      }
+      const data = await res.json();
+      currentSessionKey = data.sessionKey;
+
+      // Poblar editor IA con el texto de Gemini
+      if (data.geminiAnalysis) {
+        quillAI.setText(data.geminiAnalysis);
+      }
+
+      // Mostrar dominio en sidebar
+      if (data.domain) {
+        edDomBadge.textContent = data.domain;
+        edDomBadge.style.display = 'block';
+      }
+    }
+
+    edLoading.classList.remove('visible');
+    btnEdGen.disabled = false;
+    btnEdit.disabled = false;
+    edGenSt.textContent = 'Listo para generar';
+
+  } catch (err) {
+    edLoading.classList.remove('visible');
+    btnEdit.disabled = false;
+    edGenSt.textContent = 'Error: ' + err.message;
+    edGenSt.style.color = '#ff7b72';
+  }
+}
+
+function closeEditor() {
+  overlay.classList.remove('visible');
+  document.body.style.overflow = '';
+}
+
+// ─── Editor: generar PDF con overrides ─────────────────────────────────────
+async function generateFromEditor() {
+  if (!currentSessionKey) return;
+  btnEdGen.disabled = true;
+  edGenSt.textContent = 'Generando PDF…';
+  edGenSt.style.color = 'var(--muted)';
+
+  // Recoger toggles de secciones
+  const sections = {};
+  document.querySelectorAll('input[name="sec"]').forEach(cb => {
+    sections[cb.value] = cb.checked;
+  });
+
+  const overrides = {
+    geminiAnalysis: quillToMarkdown(quillAI),
+    coverLetter:    quillToMarkdown(quillCarta),
+    finalReport:    quillToMarkdown(quillFinal),
+    sections,
+  };
+
+  try {
+    const res = await authFetch('/api/generate-raw', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ sessionKey: currentSessionKey, overrides }),
+    });
+    if (!res) return;
+    if (!res.ok) {
+      const d = await res.json().catch(() => ({}));
+      throw new Error(d.error || `Error ${res.status}`);
+    }
+    edGenSt.textContent = '✓ Descargando…';
+    edGenSt.style.color = '#56d364';
+    await downloadBlob(res, `seo-report-editor`);
+    setTimeout(() => {
+      edGenSt.textContent = 'PDF generado correctamente';
+    }, 1500);
+  } catch (err) {
+    edGenSt.textContent = 'Error: ' + err.message;
+    edGenSt.style.color = '#ff7b72';
+  } finally {
+    btnEdGen.disabled = false;
+  }
+}
+
+// ─── Tabs del editor ────────────────────────────────────────────────────────
+document.querySelectorAll('.ed-tab').forEach(tab => {
+  tab.addEventListener('click', () => {
+    document.querySelectorAll('.ed-tab').forEach(t => t.classList.remove('active'));
+    document.querySelectorAll('.ed-panel').forEach(p => p.classList.remove('active'));
+    tab.classList.add('active');
+    const panel = document.getElementById('panel-' + tab.dataset.panel);
+    if (panel) panel.classList.add('active');
+  });
+});
+
+// ─── Event listeners ────────────────────────────────────────────────────────
+btn.addEventListener('click', generate);
+btnEdit.addEventListener('click', openEditor);
+document.getElementById('ed-close').addEventListener('click', closeEditor);
+btnEdGen.addEventListener('click', generateFromEditor);
+
+// Cerrar con Escape
+document.addEventListener('keydown', e => {
+  if (e.key === 'Escape' && overlay.classList.contains('visible')) closeEditor();
+});
+
+// ─── Auth: cargar usuario y manejar sesiones expiradas ─────────────────────
+async function authFetch(url, options = {}) {
+  const res = await fetch(url, { credentials: 'same-origin', ...options });
+  if (res.status === 401) { window.location.href = '/login.html'; return null; }
+  return res;
+}
+
+(async () => {
+  try {
+    const res = await fetch('/auth/me', { credentials: 'same-origin' });
+    if (res.status === 401) { window.location.href = '/login.html'; return; }
+    const data = await res.json();
+    if (data.email) document.getElementById('user-email').textContent = data.email;
+  } catch (_) {}
+})();
+
+document.getElementById('btn-logout').addEventListener('click', async function () {
+  this.textContent = 'Cerrando…';
+  this.disabled = true;
+  try {
+    await fetch('/auth/logout', { method: 'POST', credentials: 'same-origin' });
+  } finally {
+    window.location.href = '/login.html';
+  }
+});
+
+// ─── Inicializar ────────────────────────────────────────────────────────────
+loadLeads();
+</script>
+</body>
+</html>
