@@ -395,6 +395,41 @@ app.get('/api/leads', async (req, res) => {
   }
 });
 
+// ─── Endpoint: crear prospecto ────────────────────────────────────────────────
+app.post('/api/leads', async (req, res) => {
+  const { domain, client_name, client_email, target_location, target_language, keywords, client_notes } = req.body || {};
+
+  if (!domain || typeof domain !== 'string' || !domain.trim())
+    return res.status(400).json({ error: 'El dominio es obligatorio.' });
+
+  const cleanDomain = domain.trim().replace(/^https?:\/\//, '').replace(/\/$/, '').toLowerCase();
+  if (!cleanDomain.includes('.') || cleanDomain.length < 4)
+    return res.status(400).json({ error: 'Ingresa un dominio válido (ej: cliente.cl)' });
+
+  if (!isAllowedUrl(`https://${cleanDomain}`))
+    return res.status(400).json({ error: 'Dominio no permitido.' });
+
+  const apiKey = process.env.WEBCEO_API_KEY;
+  if (!apiKey) return res.status(500).json({ error: 'WEBCEO_API_KEY no configurada.' });
+
+  const data = { domain: `https://${cleanDomain}` };
+  if (client_name)      data.client_name      = String(client_name).trim().slice(0, 200);
+  if (client_email)     data.client_email     = String(client_email).trim().slice(0, 200);
+  if (target_location)  data.target_location  = String(target_location).trim().slice(0, 200);
+  if (target_language)  data.target_language  = String(target_language).trim().slice(0, 100);
+  if (client_notes)     data.client_notes     = String(client_notes).trim().slice(0, 2000);
+  if (Array.isArray(keywords) && keywords.length)
+    data.keywords = keywords.slice(0, 50).map(k => String(k).trim().slice(0, 100)).filter(Boolean);
+
+  try {
+    const result = await apiCall(apiKey, 'create_lead', data);
+    res.json({ ok: true, lead: result });
+  } catch (err) {
+    console.error('Error create_lead:', err.message);
+    res.status(500).json({ error: 'Error al crear el prospecto en WebCEO.' });
+  }
+});
+
 // ─── Endpoint: pre-fetch de datos para el editor ─────────────────────────────
 app.post('/api/prefetch-report', async (req, res) => {
   const { leadId } = req.body;

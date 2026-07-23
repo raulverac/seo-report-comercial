@@ -112,6 +112,119 @@
     .footer a { color: var(--brand); text-decoration: none; }
 
     /* ══════════════════════════════════════════════════════
+       CREAR PROSPECTO MODAL
+    ══════════════════════════════════════════════════════ */
+    .section-header-row {
+      display: flex; align-items: center; justify-content: space-between;
+      margin-bottom: 10px;
+    }
+    .section-header-row .section-label { margin-bottom: 0; }
+    #btn-create-lead {
+      display: flex; align-items: center; gap: 6px;
+      font-size: 11px; font-weight: 700; color: var(--green);
+      background: rgba(26,107,58,0.12); border: 1px solid rgba(26,107,58,0.3);
+      border-radius: 6px; padding: 5px 12px;
+      cursor: pointer; font-family: inherit; letter-spacing: 0.3px;
+      transition: background 0.15s, border-color 0.15s;
+    }
+    #btn-create-lead:hover { background: rgba(26,107,58,0.2); border-color: rgba(26,107,58,0.5); }
+    #btn-create-lead svg   { flex-shrink: 0; }
+
+    /* Modal backdrop */
+    #modal-create {
+      display: none; position: fixed; inset: 0; z-index: 2000;
+      background: rgba(0,0,0,0.7); backdrop-filter: blur(4px);
+      align-items: center; justify-content: center; padding: 20px;
+    }
+    #modal-create.visible { display: flex; }
+    .modal-card {
+      background: var(--surface); border: 1px solid var(--border);
+      border-radius: 16px; padding: 32px 36px;
+      width: 100%; max-width: 520px;
+      box-shadow: 0 32px 80px rgba(0,0,0,0.7);
+      max-height: 90vh; overflow-y: auto;
+    }
+    .modal-header {
+      display: flex; align-items: center; justify-content: space-between;
+      margin-bottom: 24px;
+    }
+    .modal-title { font-size: 17px; font-weight: 700; }
+    .modal-close {
+      background: none; border: none; color: var(--muted); cursor: pointer;
+      font-size: 20px; line-height: 1; padding: 2px 6px;
+      transition: color 0.15s;
+    }
+    .modal-close:hover { color: var(--text); }
+    .mfield { margin-bottom: 16px; }
+    .mfield label {
+      display: block; font-size: 11px; font-weight: 600; color: var(--muted);
+      text-transform: uppercase; letter-spacing: 0.8px; margin-bottom: 7px;
+    }
+    .mfield label .req { color: var(--brand); margin-left: 2px; }
+    .mfield input, .mfield textarea {
+      width: 100%; background: var(--surface2); border: 1.5px solid var(--border);
+      border-radius: 8px; padding: 10px 13px; color: var(--text);
+      font-size: 14px; font-family: inherit; outline: none;
+      transition: border-color 0.15s, box-shadow 0.15s;
+    }
+    .mfield input::placeholder, .mfield textarea::placeholder { color: #555; }
+    .mfield input:focus, .mfield textarea:focus {
+      border-color: var(--green); box-shadow: 0 0 0 3px rgba(26,107,58,0.15);
+    }
+    .mfield textarea { resize: vertical; min-height: 72px; }
+    .mfield-row { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
+
+    /* Tag / keyword input */
+    .kw-input-wrap {
+      display: flex; flex-wrap: wrap; gap: 6px; align-items: center;
+      background: var(--surface2); border: 1.5px solid var(--border);
+      border-radius: 8px; padding: 7px 10px; cursor: text;
+      min-height: 42px; transition: border-color 0.15s, box-shadow 0.15s;
+    }
+    .kw-input-wrap:focus-within {
+      border-color: var(--green); box-shadow: 0 0 0 3px rgba(26,107,58,0.15);
+    }
+    .kw-tag-item {
+      display: flex; align-items: center; gap: 5px;
+      background: rgba(26,107,58,0.18); border: 1px solid rgba(26,107,58,0.35);
+      border-radius: 5px; padding: 2px 8px;
+      font-size: 11px; color: #6bcf8e; font-weight: 600;
+    }
+    .kw-tag-item button {
+      background: none; border: none; color: #6bcf8e; cursor: pointer;
+      font-size: 13px; line-height: 1; padding: 0; opacity: 0.7;
+    }
+    .kw-tag-item button:hover { opacity: 1; }
+    .kw-text-input {
+      background: none; border: none; outline: none; color: var(--text);
+      font-size: 13px; font-family: inherit; min-width: 120px; flex: 1;
+    }
+    .kw-hint { font-size: 10px; color: var(--muted); margin-top: 5px; }
+
+    .modal-footer {
+      display: flex; gap: 10px; margin-top: 24px; justify-content: flex-end;
+    }
+    #btn-modal-cancel {
+      background: var(--surface2); color: var(--muted); border: 1px solid var(--border);
+      border-radius: 8px; padding: 10px 20px; font-size: 14px; font-weight: 600;
+      cursor: pointer; font-family: inherit; transition: border-color 0.15s;
+    }
+    #btn-modal-cancel:hover { border-color: #555; color: var(--text); }
+    #btn-modal-submit {
+      background: var(--green); color: #fff; border: none;
+      border-radius: 8px; padding: 10px 24px; font-size: 14px; font-weight: 700;
+      cursor: pointer; font-family: inherit; display: flex; align-items: center; gap: 7px;
+      transition: background 0.15s; white-space: nowrap;
+    }
+    #btn-modal-submit:hover:not(:disabled) { background: #14572f; }
+    #btn-modal-submit:disabled { opacity: 0.55; cursor: not-allowed; }
+    #modal-error {
+      background: rgba(230,59,46,0.1); border: 1px solid rgba(230,59,46,0.3);
+      border-radius: 8px; padding: 10px 14px; font-size: 13px; color: #ff7b72;
+      margin-top: 14px; display: none;
+    }
+
+    /* ══════════════════════════════════════════════════════
        EDITOR OVERLAY
     ══════════════════════════════════════════════════════ */
     #editor-overlay {
@@ -275,7 +388,15 @@
   <h1>SEO<br><span>REPORT</span></h1>
   <p class="subtitle">Selecciona un prospecto de WebCEO para generar su reporte PDF completo.</p>
 
-  <div class="section-label">Prospectos SEO — WebCEO</div>
+  <div class="section-header-row">
+    <div class="section-label">Prospectos SEO — WebCEO</div>
+    <button id="btn-create-lead">
+      <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
+        <line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/>
+      </svg>
+      Crear Prospecto
+    </button>
+  </div>
 
   <div id="leads-loading"><div class="spinner"></div> Cargando prospectos…</div>
   <div id="leads-error"></div>
@@ -320,6 +441,72 @@
 </div>
 
 <div class="footer">Powered by <a href="https://www.mentalidadweb.com" target="_blank">Mentalidad Web</a> × WebCEO</div>
+
+<!-- ══════════════════════════════════════════════════════════════════════════
+     MODAL: CREAR PROSPECTO
+══════════════════════════════════════════════════════════════════════════ -->
+<div id="modal-create">
+  <div class="modal-card">
+    <div class="modal-header">
+      <div class="modal-title">Nuevo Prospecto</div>
+      <button class="modal-close" id="btn-modal-close" title="Cerrar">✕</button>
+    </div>
+
+    <form id="form-create" autocomplete="off" novalidate>
+      <div class="mfield">
+        <label>Dominio / URL <span class="req">*</span></label>
+        <input type="text" id="nc-domain" placeholder="ejemplo.cl o https://ejemplo.cl" autocomplete="off" />
+      </div>
+
+      <div class="mfield-row">
+        <div class="mfield">
+          <label>Nombre del contacto</label>
+          <input type="text" id="nc-name" placeholder="Juan Pérez" />
+        </div>
+        <div class="mfield">
+          <label>Email del contacto</label>
+          <input type="email" id="nc-email" placeholder="juan@ejemplo.cl" />
+        </div>
+      </div>
+
+      <div class="mfield-row">
+        <div class="mfield">
+          <label>Ubicación objetivo</label>
+          <input type="text" id="nc-location" placeholder="Santiago, Chile" />
+        </div>
+        <div class="mfield">
+          <label>Idioma objetivo</label>
+          <input type="text" id="nc-language" placeholder="Español" />
+        </div>
+      </div>
+
+      <div class="mfield">
+        <label>Keywords objetivo</label>
+        <div class="kw-input-wrap" id="kw-wrap">
+          <input class="kw-text-input" id="kw-text" placeholder="Escribe y presiona Enter o coma…" autocomplete="off" />
+        </div>
+        <div class="kw-hint">Presiona Enter o , para agregar cada keyword</div>
+      </div>
+
+      <div class="mfield">
+        <label>Notas</label>
+        <textarea id="nc-notes" placeholder="Contexto del prospecto, observaciones…"></textarea>
+      </div>
+
+      <div id="modal-error"></div>
+
+      <div class="modal-footer">
+        <button type="button" id="btn-modal-cancel">Cancelar</button>
+        <button type="submit" id="btn-modal-submit">
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
+            <line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/>
+          </svg>
+          Crear Prospecto
+        </button>
+      </div>
+    </form>
+  </div>
+</div>
 
 <!-- ══════════════════════════════════════════════════════════════════════════
      EDITOR OVERLAY
@@ -830,6 +1017,126 @@ btnEdGen.addEventListener('click', generateFromEditor);
 // Cerrar con Escape
 document.addEventListener('keydown', e => {
   if (e.key === 'Escape' && overlay.classList.contains('visible')) closeEditor();
+  if (e.key === 'Escape') closeCreateModal();
+});
+
+// ─── Modal: Crear Prospecto ────────────────────────────────────────────────
+const modalCreate  = document.getElementById('modal-create');
+const modalErrEl   = document.getElementById('modal-error');
+let kwTags = [];
+
+function openCreateModal() {
+  kwTags = [];
+  document.getElementById('form-create').reset();
+  renderKwTags();
+  modalErrEl.style.display = 'none';
+  document.getElementById('btn-modal-submit').disabled = false;
+  document.getElementById('btn-modal-submit').innerHTML =
+    '<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg> Crear Prospecto';
+  modalCreate.classList.add('visible');
+  document.body.style.overflow = 'hidden';
+  setTimeout(() => document.getElementById('nc-domain').focus(), 80);
+}
+
+function closeCreateModal() {
+  modalCreate.classList.remove('visible');
+  document.body.style.overflow = '';
+}
+
+function renderKwTags() {
+  const wrap = document.getElementById('kw-wrap');
+  const input = document.getElementById('kw-text');
+  wrap.querySelectorAll('.kw-tag-item').forEach(el => el.remove());
+  kwTags.forEach((tag, i) => {
+    const el = document.createElement('div');
+    el.className = 'kw-tag-item';
+    el.innerHTML = `${tag}<button type="button" title="Quitar">×</button>`;
+    el.querySelector('button').addEventListener('click', () => { kwTags.splice(i, 1); renderKwTags(); });
+    wrap.insertBefore(el, input);
+  });
+}
+
+function addKwTag(val) {
+  const clean = val.trim().replace(/,+$/, '').trim();
+  if (clean && !kwTags.includes(clean) && kwTags.length < 50) {
+    kwTags.push(clean);
+    renderKwTags();
+  }
+}
+
+document.getElementById('kw-text').addEventListener('keydown', e => {
+  if (e.key === 'Enter' || e.key === ',') {
+    e.preventDefault();
+    addKwTag(e.target.value);
+    e.target.value = '';
+  } else if (e.key === 'Backspace' && !e.target.value && kwTags.length) {
+    kwTags.pop();
+    renderKwTags();
+  }
+});
+document.getElementById('kw-text').addEventListener('blur', e => {
+  if (e.target.value.trim()) { addKwTag(e.target.value); e.target.value = ''; }
+});
+document.getElementById('kw-wrap').addEventListener('click', () => {
+  document.getElementById('kw-text').focus();
+});
+
+document.getElementById('btn-create-lead').addEventListener('click', openCreateModal);
+document.getElementById('btn-modal-cancel').addEventListener('click', closeCreateModal);
+document.getElementById('btn-modal-close').addEventListener('click', closeCreateModal);
+modalCreate.addEventListener('click', e => { if (e.target === modalCreate) closeCreateModal(); });
+
+document.getElementById('form-create').addEventListener('submit', async (e) => {
+  e.preventDefault();
+  modalErrEl.style.display = 'none';
+
+  const domain = document.getElementById('nc-domain').value.trim();
+  if (!domain) {
+    modalErrEl.textContent = 'El dominio es obligatorio.';
+    modalErrEl.style.display = 'block';
+    document.getElementById('nc-domain').focus();
+    return;
+  }
+
+  // Capturar keyword pendiente en el input
+  const kwInput = document.getElementById('kw-text');
+  if (kwInput.value.trim()) { addKwTag(kwInput.value); kwInput.value = ''; }
+
+  const btn = document.getElementById('btn-modal-submit');
+  btn.disabled = true;
+  btn.innerHTML = '<span class="spinner" style="width:13px;height:13px;border-width:2px;margin-right:6px;"></span>Creando…';
+
+  try {
+    const res = await authFetch('/api/leads', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        domain,
+        client_name:     document.getElementById('nc-name').value.trim()     || undefined,
+        client_email:    document.getElementById('nc-email').value.trim()    || undefined,
+        target_location: document.getElementById('nc-location').value.trim() || undefined,
+        target_language: document.getElementById('nc-language').value.trim() || undefined,
+        keywords:        kwTags.length ? kwTags : undefined,
+        client_notes:    document.getElementById('nc-notes').value.trim()    || undefined,
+      }),
+    });
+    if (!res) return;
+    const data = await res.json().catch(() => ({}));
+    if (!res.ok) {
+      modalErrEl.textContent = data.error || `Error ${res.status}`;
+      modalErrEl.style.display = 'block';
+      btn.disabled = false;
+      btn.innerHTML = '<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg> Crear Prospecto';
+      return;
+    }
+    closeCreateModal();
+    await loadLeads();
+  } catch (err) {
+    modalErrEl.textContent = 'No se pudo conectar con el servidor.';
+    modalErrEl.style.display = 'block';
+    btn.disabled = false;
+    btn.innerHTML = '<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg> Crear Prospecto';
+  }
 });
 
 // ─── Auth: cargar usuario y manejar sesiones expiradas ─────────────────────
