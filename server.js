@@ -373,7 +373,10 @@ let _reqId = Date.now();
 async function apiCall(key, method, data = {}) {
   const r = await axios.post(API_URL, { method, key, id: String(++_reqId), data }, { timeout: 30000 });
   const res = Array.isArray(r.data) ? r.data[0] : r.data;
-  if (res.errormsg) throw new Error(`[${method}] ${res.errormsg}`);
+  if (res.errormsg) {
+    const msg = typeof res.errormsg === 'object' ? JSON.stringify(res.errormsg) : String(res.errormsg);
+    throw new Error(`[${method}] ${msg}`);
+  }
   return res.data;
 }
 
@@ -412,31 +415,36 @@ app.post('/api/leads', async (req, res) => {
   const apiKey = process.env.WEBCEO_API_KEY;
   if (!apiKey) return res.status(500).json({ error: 'WEBCEO_API_KEY no configurada.' });
 
-  const data = { domain: cleanDomain };
-  if (client_name)      data.client_name      = String(client_name).trim().slice(0, 200);
-  if (client_email)     data.client_email     = String(client_email).trim().slice(0, 200);
-  if (target_location)  data.target_location  = String(target_location).trim().slice(0, 200);
-  if (target_language)  data.target_language  = String(target_language).trim().slice(0, 100);
-  if (client_notes)     data.client_notes     = String(client_notes).trim().slice(0, 2000);
-  if (Array.isArray(keywords) && keywords.length)
-    data.keywords = keywords.slice(0, 50).map(k => String(k).trim().slice(0, 100)).filter(Boolean);
+  const kwList = Array.isArray(keywords) && keywords.length
+    ? keywords.slice(0, 50).map(k => String(k).trim().slice(0, 100)).filter(Boolean)
+    : [];
 
-  // Intentar add_lead primero; si falla por método desconocido, intentar create_lead
-  for (const method of ['add_lead', 'create_lead']) {
+  // WebCEO puede esperar domain con o sin protocolo — probar ambas variantes
+  const domainVariants = [cleanDomain, `https://${cleanDomain}`];
+
+  for (const domainVal of domainVariants) {
+    const data = { domain: domainVal };
+    if (client_name)     data.client_name     = String(client_name).trim().slice(0, 200);
+    if (client_email)    data.client_email    = String(client_email).trim().slice(0, 200);
+    if (target_location) data.target_location = String(target_location).trim().slice(0, 200);
+    if (target_language) data.target_language = String(target_language).trim().slice(0, 100);
+    if (client_notes)    data.client_notes    = String(client_notes).trim().slice(0, 2000);
+    if (kwList.length)   data.keywords        = kwList;
+
     try {
-      const result = await apiCall(apiKey, method, data);
+      const result = await apiCall(apiKey, 'add_lead', data);
       return res.json({ ok: true, lead: result });
     } catch (err) {
       const msg = err.message || '';
-      console.error(`Error ${method}:`, msg);
-      // Si el error es "método no existe" probamos el siguiente
-      if (method === 'add_lead' && (msg.includes('unknown') || msg.includes('method') || msg.includes('not found') || msg.includes('errormsg'))) {
+      console.error(`Error add_lead (domain="${domainVal}"):`, msg);
+      // Si la primera variante falla con error de dominio, probar la otra
+      if (domainVal === cleanDomain && (msg.includes('domain') || msg.includes('invalid') || msg.includes('format') || msg.includes('url'))) {
         continue;
       }
       return res.status(500).json({ error: msg || 'Error al crear el prospecto en WebCEO.' });
     }
   }
-  return res.status(500).json({ error: 'WebCEO no soporta la creación de prospectos vía API.' });
+  return res.status(500).json({ error: 'No se pudo crear el prospecto: dominio rechazado por WebCEO.' });
 });
 
 // ─── Endpoint: pre-fetch de datos para el editor ─────────────────────────────
