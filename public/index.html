@@ -469,17 +469,6 @@
         </div>
       </div>
 
-      <div class="mfield-row">
-        <div class="mfield">
-          <label>Ubicación objetivo</label>
-          <input type="text" id="nc-location" placeholder="Santiago, Chile" />
-        </div>
-        <div class="mfield">
-          <label>Idioma objetivo</label>
-          <input type="text" id="nc-language" placeholder="Español" />
-        </div>
-      </div>
-
       <div class="mfield">
         <label>Keywords objetivo</label>
         <div class="kw-input-wrap" id="kw-wrap">
@@ -1112,12 +1101,10 @@ document.getElementById('form-create').addEventListener('submit', async (e) => {
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({
         domain,
-        client_name:     document.getElementById('nc-name').value.trim()     || undefined,
-        client_email:    document.getElementById('nc-email').value.trim()    || undefined,
-        target_location: document.getElementById('nc-location').value.trim() || undefined,
-        target_language: document.getElementById('nc-language').value.trim() || undefined,
-        keywords:        kwTags.length ? kwTags : undefined,
-        client_notes:    document.getElementById('nc-notes').value.trim()    || undefined,
+        client_name:  document.getElementById('nc-name').value.trim()  || undefined,
+        client_email: document.getElementById('nc-email').value.trim() || undefined,
+        keywords:     kwTags.length ? kwTags : undefined,
+        client_notes: document.getElementById('nc-notes').value.trim() || undefined,
       }),
     });
     if (!res) return;

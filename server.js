@@ -419,32 +419,22 @@ app.post('/api/leads', async (req, res) => {
     ? keywords.slice(0, 50).map(k => String(k).trim().slice(0, 100)).filter(Boolean)
     : [];
 
-  // WebCEO puede esperar domain con o sin protocolo — probar ambas variantes
-  const domainVariants = [cleanDomain, `https://${cleanDomain}`];
+  // target_language y target_location requieren valores exactos de listas de Google Ads
+  // → no se envían al crear; el usuario puede configurarlos desde WebCEO
+  const data = { domain: cleanDomain };
+  if (client_name)  data.client_name  = String(client_name).trim().slice(0, 200);
+  if (client_email) data.client_email = String(client_email).trim().slice(0, 200);
+  if (client_notes) data.client_notes = String(client_notes).trim().slice(0, 2000);
+  if (kwList.length) data.keywords    = kwList;
 
-  for (const domainVal of domainVariants) {
-    const data = { domain: domainVal };
-    if (client_name)     data.client_name     = String(client_name).trim().slice(0, 200);
-    if (client_email)    data.client_email    = String(client_email).trim().slice(0, 200);
-    if (target_location) data.target_location = String(target_location).trim().slice(0, 200);
-    if (target_language) data.target_language = String(target_language).trim().slice(0, 100);
-    if (client_notes)    data.client_notes    = String(client_notes).trim().slice(0, 2000);
-    if (kwList.length)   data.keywords        = kwList;
-
-    try {
-      const result = await apiCall(apiKey, 'add_lead', data);
-      return res.json({ ok: true, lead: result });
-    } catch (err) {
-      const msg = err.message || '';
-      console.error(`Error add_lead (domain="${domainVal}"):`, msg);
-      // Si la primera variante falla con error de dominio, probar la otra
-      if (domainVal === cleanDomain && (msg.includes('domain') || msg.includes('invalid') || msg.includes('format') || msg.includes('url'))) {
-        continue;
-      }
-      return res.status(500).json({ error: msg || 'Error al crear el prospecto en WebCEO.' });
-    }
+  try {
+    const result = await apiCall(apiKey, 'add_lead', data);
+    return res.json({ ok: true, lead: result });
+  } catch (err) {
+    const msg = err.message || '';
+    console.error('Error add_lead:', msg);
+    return res.status(500).json({ error: msg || 'Error al crear el prospecto en WebCEO.' });
   }
-  return res.status(500).json({ error: 'No se pudo crear el prospecto: dominio rechazado por WebCEO.' });
 });
 
 // ─── Endpoint: pre-fetch de datos para el editor ─────────────────────────────
