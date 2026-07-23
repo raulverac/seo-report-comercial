@@ -716,58 +716,6 @@ async function generateRawReport(raw, outputPath) {
        .text(domain, PAGE.ml + 12, y + 21);
     y += 44;
 
-    // Screenshot con browser chrome + barra de métricas
-    // La imagen llega pre-procesada por Sharp: 970px ancho, crop a 700px de viewport
-    // → al mostrarla en 485px (COL) queda a 2× → nitidez retina en PDF
-    {
-      const imgW  = COL;                              // 485px en PDF
-      const imgH  = Math.round(imgW * 700 / 1280);   // ≈265px (prop. del crop de Sharp)
-      const barH  = 24;
-      const cardR = 7;
-
-      // Card completo (chrome + imagen) con bordes redondeados
-      doc.save().roundedRect(PAGE.ml, y, imgW, barH + imgH, cardR).clip();
-
-      // Chrome bar
-      fill(doc, '#1e1e1e', PAGE.ml, y, imgW, barH);
-
-      // Traffic-light dots
-      const dotY = y + barH / 2;
-      doc.save().fillColor([255, 95, 87]).circle(PAGE.ml + 14, dotY, 4.5).fill().restore();
-      doc.save().fillColor([255, 189, 46]).circle(PAGE.ml + 27, dotY, 4.5).fill().restore();
-      doc.save().fillColor([40, 200, 80]).circle(PAGE.ml + 40, dotY, 4.5).fill().restore();
-
-      // URL bar centrada
-      const urlW = Math.round(imgW * 0.52);
-      const urlX = PAGE.ml + Math.round((imgW - urlW) / 2);
-      fill(doc, '#3a3a3a', urlX, y + 5, urlW, 14, 4);
-      doc.fontSize(6).font('Helvetica').fillColor([180, 180, 180])
-         .text('https://' + domain, urlX, y + 8, { width: urlW, align: 'center', lineBreak: false });
-
-      // Imagen del sitio (pre-recortada y procesada por Sharp)
-      if (siteInfo && siteInfo.screenshot) {
-        try {
-          doc.image(siteInfo.screenshot, PAGE.ml, y + barH, { width: imgW });
-        } catch (_) {
-          fill(doc, C.greenBg, PAGE.ml, y + barH, imgW, imgH);
-          doc.fontSize(9).font('Helvetica').fillColor(rgb(C.muted))
-             .text('Vista previa no disponible', PAGE.ml, y + barH + imgH / 2 - 5, { width: imgW, align: 'center', lineBreak: false });
-        }
-      } else {
-        fill(doc, C.greenBg, PAGE.ml, y + barH, imgW, imgH);
-        doc.fontSize(9).font('Helvetica').fillColor(rgb(C.muted))
-           .text('Vista previa no disponible', PAGE.ml, y + barH + imgH / 2 - 5, { width: imgW, align: 'center', lineBreak: false });
-      }
-
-      doc.restore(); // fin clip del card
-
-      // Borde exterior
-      doc.save().strokeColor(rgb(C.border)).lineWidth(0.7)
-         .roundedRect(PAGE.ml, y, imgW, barH + imgH, cardR).stroke().restore();
-
-      y += barH + imgH + 8;
-    }
-
     // Barra de métricas
     {
       const statItems = [

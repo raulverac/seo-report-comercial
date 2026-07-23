@@ -1,32 +1,6 @@
 'use strict';
 
 const puppeteer = require('puppeteer');
-const sharp     = require('sharp');
-const axios     = require('axios');
-
-// ─── Thumbnail via thum.io (gratis, sin API key, imágenes limpias sin popups) ─
-// Parámetros: width=1280, crop=700px verticales (hero above the fold)
-async function fetchThumbnail(url) {
-  const encoded = encodeURIComponent(url);
-  const thumbUrl = `https://image.thum.io/get/width/1280/crop/700/noanimate/${url}`;
-  try {
-    const res = await axios.get(thumbUrl, {
-      responseType: 'arraybuffer',
-      timeout: 20000,
-      headers: { 'User-Agent': 'Mozilla/5.0 (compatible; SEOBot/1.0)' },
-    });
-    if (res.status !== 200) return null;
-
-    // Procesar con Sharp: escalar a 970px (2× del ancho en PDF) para nitidez retina
-    return await sharp(Buffer.from(res.data))
-      .resize(970, null, { kernel: sharp.kernel.lanczos3 })
-      .sharpen({ sigma: 0.8, m1: 1.0, m2: 0.5 })
-      .jpeg({ quality: 90 })
-      .toBuffer();
-  } catch (_) {
-    return null;
-  }
-}
 
 // Selectores comunes de banners de cookies/popups para intentar cerrar
 const COOKIE_SELECTORS = [
@@ -55,19 +29,7 @@ function isAllowedUrl(urlStr) {
 
 async function scrapeSite(url) {
   if (!isAllowedUrl(url)) return null;
-
-  // Lanzar thumbnail y Puppeteer en paralelo para no perder tiempo
-  const [thumbnail, puppeteerResult] = await Promise.all([
-    fetchThumbnail(url),
-    scrapeMeta(url),
-  ]);
-
-  if (!puppeteerResult && !thumbnail) return null;
-
-  return {
-    screenshot: thumbnail || null,
-    ...(puppeteerResult || {}),
-  };
+  return scrapeMeta(url);
 }
 
 // ─── Puppeteer solo para metadatos SEO (título, descripción, teléfono, email, dirección)
