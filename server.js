@@ -412,7 +412,7 @@ app.post('/api/leads', async (req, res) => {
   const apiKey = process.env.WEBCEO_API_KEY;
   if (!apiKey) return res.status(500).json({ error: 'WEBCEO_API_KEY no configurada.' });
 
-  const data = { domain: `https://${cleanDomain}` };
+  const data = { domain: cleanDomain };
   if (client_name)      data.client_name      = String(client_name).trim().slice(0, 200);
   if (client_email)     data.client_email     = String(client_email).trim().slice(0, 200);
   if (target_location)  data.target_location  = String(target_location).trim().slice(0, 200);
@@ -421,13 +421,22 @@ app.post('/api/leads', async (req, res) => {
   if (Array.isArray(keywords) && keywords.length)
     data.keywords = keywords.slice(0, 50).map(k => String(k).trim().slice(0, 100)).filter(Boolean);
 
-  try {
-    const result = await apiCall(apiKey, 'create_lead', data);
-    res.json({ ok: true, lead: result });
-  } catch (err) {
-    console.error('Error create_lead:', err.message);
-    res.status(500).json({ error: 'Error al crear el prospecto en WebCEO.' });
+  // Intentar add_lead primero; si falla por método desconocido, intentar create_lead
+  for (const method of ['add_lead', 'create_lead']) {
+    try {
+      const result = await apiCall(apiKey, method, data);
+      return res.json({ ok: true, lead: result });
+    } catch (err) {
+      const msg = err.message || '';
+      console.error(`Error ${method}:`, msg);
+      // Si el error es "método no existe" probamos el siguiente
+      if (method === 'add_lead' && (msg.includes('unknown') || msg.includes('method') || msg.includes('not found') || msg.includes('errormsg'))) {
+        continue;
+      }
+      return res.status(500).json({ error: msg || 'Error al crear el prospecto en WebCEO.' });
+    }
   }
+  return res.status(500).json({ error: 'WebCEO no soporta la creación de prospectos vía API.' });
 });
 
 // ─── Endpoint: pre-fetch de datos para el editor ─────────────────────────────
